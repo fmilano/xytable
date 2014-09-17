@@ -11,7 +11,7 @@ function [pasos] = simulador_control(x_y,mov,sizeX,SP,sentido)
     % Constantes dependientes de la calibracion
     PORCx_PIXELES = sizeX/100;                  % (240 pixels)/(100 %)
     PORCx_PASOS   = PORCx_PIXELES/PASOS_PIXELES;        
-    MM_PASOS      = 150;                        % (300 pasos)/(2 mm)
+    MM_PASOS      = ud.MM_PASOS;                        % (300 pasos)/(2 mm)
     
     switch (x_y)
         case {'X'}

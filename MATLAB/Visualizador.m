@@ -62,15 +62,14 @@ guidata(hObject, handles);
 % uiwait(handles.figure1);
 clc;
 ud = get(0,'userdata');
-ud = [];
 ud.titulo = 'Muestra_01';
-load(['data_' ud.titulo '.mat']);
+load(['/home/axel/Desktop/XYTableAcData/data_' ud.titulo '.mat']);
 
 % Tamaño en pixeles del axes del visualizador
 ud.true_size = [1000 600];
 
 % Se carga la nueva matriz de im_pos
-load(['final_im_pos_' ud.titulo '.mat']);
+load(['/home/axel/Desktop/XYTableAcData/final_im_pos_' ud.titulo '.mat']);
 ud.im_pos = final_im_pos;
 
 num_filas = size(final_im_pos,1);
@@ -84,7 +83,7 @@ ud.ylim = [1 ud.sizeY];
 % Porcion extra porcentual hacia los 4 sentidos, para permitir el Span
 ud.porcion_extra = 0.3;
 
-[ud.imagen,ud.escala,ud.num_imagenes] = find_image(['Final_' ud.titulo],ud.xlim,ud.ylim,ud.im_pos,[1000 600]);
+[ud.imagen,ud.escala,ud.num_imagenes] = find_image(['Final_' ud.titulo],ud.xlim,ud.ylim,ud.im_pos,[1000 600],0);
 
 ud.cambio_zoom = 0;
 ud.cambio_titulo = 0;
@@ -228,12 +227,11 @@ function comenzar_Callback(hObject, eventdata, handles)
             ud.porcionY = porcionY;
             set(0,'userdata',ud);
                     
-            waitbar(0.3);
-            [imagen,ud.escala,num_imagenes] = find_image(['Final_' ud.titulo],porcionX,porcionY,ud.im_pos,(1+ud.porcion_extra)*ud.true_size);
+            waitbar(0,hw);
+            [imagen,ud.escala,num_imagenes] = find_image(['Final_' ud.titulo],porcionX,porcionY,ud.im_pos,(1+ud.porcion_extra)*ud.true_size,hw);
             [sizeY,sizeX,sizeZ] = size(imagen);
             set(handles.text1,'String',['Imágenes cargadas: ' num2str(num_imagenes)]);
             set(0,'userdata',ud);
-            waitbar(0.6);
             
             if (ud.zoom_out_final == 0)
                 % Limites dentro de la porcion de imagen obtenida
@@ -249,7 +247,7 @@ function comenzar_Callback(hObject, eventdata, handles)
             
             % Fin del waitbar, se actualiza la imagen y se vuelve a
             % permitir ela herramienta de zoom o de pan
-            waitbar(1);
+            waitbar(1,hw);
             close(hw);
             if (ud.zoom == 1)
                 zoom on;
@@ -263,7 +261,7 @@ function comenzar_Callback(hObject, eventdata, handles)
             % Boton reset
             if (ud.reset == 1)
                 ud.reset = 0;
-                ud.xlim = [1 ud.im_pos(1,end,1)-1];
+                ud.xlim = [1 ud.sizeX];
                 ud.ylim = [1 ud.sizeY];
                 ud.cambio_zoom = 1;
                 ud.zoom_out_final = 1;
@@ -276,7 +274,7 @@ function comenzar_Callback(hObject, eventdata, handles)
                 % Se recalcula la imagen total
                 
                 % Se carga la nueva matriz de im_pos
-                load(['final_im_pos_' ud.titulo '.mat']);
+                load(['/home/axel/Desktop/XYTableAcData/final_im_pos_' ud.titulo '.mat']);
                 ud.im_pos = final_im_pos;
 
                 num_filas = size(final_im_pos,1);
@@ -332,7 +330,7 @@ num_lines = 1;
 def = {ud.titulo};
 answer = inputdlg(prompt,dlg_title,num_lines,def);
 if (~isempty(answer))
-    if (exist([answer{1} '_01.png']) == 0)
+    if (exist(['/home/axel/Desktop/XYTableAcData/' answer{1} '/Final_' answer{1} '_01.png']) == 0)
         errordlg('Muestra no encontrada','Error');
     else
         ud.titulo = answer{1};

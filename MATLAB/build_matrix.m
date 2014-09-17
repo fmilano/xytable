@@ -26,7 +26,7 @@ function [pos_im] = build_matrix(titulo,fila,matriz_filas)
     
     % Recorro las columnas
     for columna=1:numColumnas
-        proxima_imagen{i} = imread([titulo '_0' num2str(i) '.png']);
+        proxima_imagen{i} = imread(['/home/axel/Desktop/XYTableAcData/' titulo '/' titulo '_0' num2str(i) '.png']);
 
         pos_im(1,columna+1,1) = pos_im(1,columna,1) + size(proxima_imagen{i},2);
         pos_im(1,columna+1,2) = i;
@@ -37,11 +37,11 @@ function [pos_im] = build_matrix(titulo,fila,matriz_filas)
     % Sentido derecha
     if (sentido == 1)
         i = matriz_filas(fila,1);
-        pos_im(1,1,1) = size(imread([titulo '_0' num2str(i+numColumnas-1) '.png']),1);
+        pos_im(1,1,1) = size(imread(['/home/axel/Desktop/XYTableAcData/' titulo '/' titulo '_0' num2str(i+numColumnas-1) '.png']),1);
     % Sentido izquierda
     else
         i = matriz_filas(fila,1)+numColumnas-1;
-        pos_im(1,1,1) = size(imread([titulo '_0' num2str(i) '.png']),1);
+        pos_im(1,1,1) = size(imread(['/home/axel/Desktop/XYTableAcData/' titulo '/' titulo '_0' num2str(i) '.png']),1);
     end
 
 end

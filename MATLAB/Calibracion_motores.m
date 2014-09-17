@@ -64,7 +64,6 @@ set(handles.text,'string','¿Confirma que los puntos resaltados en verde coincid
 ud = get(0,'userdata');
 ud.calibracion_activa = 1;
 ud.handles2 = handles;
-ud.ser = comenzar_comunicacion(ud.COM,9600);
 
 ud.motor_movido = 0;
 
@@ -119,7 +118,7 @@ if (get(ud.handles.check_eq,'value') == 1)
     im2 = eq_rgb(im2);
 end
 
-[ud.mov_motor_aux,mp1,mp2,metric] = match(im1,im2,20,0.7);
+[ud.mov_motor_aux,mp1,mp2,metric] = match(im1,im2,20,0.7,'preview');
 axes(handles.axes1);hold off;imshow(im1);hold on; plot(mp1);
 axes(handles.axes2);hold off;imshow(im2);hold on;plot(mp2);
 set(handles.text,'visible','on');
@@ -165,7 +164,7 @@ if (get(ud.handles.check_eq,'value') == 1)
     im2 = eq_rgb(im2);
 end
 
-[ud.mov_motor_aux,mp1,mp2,metric] = match(im1,im2,20,0.7);
+[ud.mov_motor_aux,mp1,mp2,metric] = match(im1,im2,20,0.7,'preview');
 axes(handles.axes1);hold off;imshow(im1);hold on; plot(mp1);
 axes(handles.axes2);hold off;imshow(im2);hold on;plot(mp2);
 set(handles.text,'visible','on');
@@ -241,6 +240,9 @@ else
 end
 
 ud.pasos_pixeles = max(abs(mov))/200;
+ud.calibracion_activa = 0;
+ud.handles2 = [];
+fread(ud.ser,ud.ser.BytesAvailable,'uint8');
 set(0,'userdata',ud);
 close(handles.figure1);
 
@@ -253,3 +255,4 @@ set(handles.aceptar,'enable','off');
 set(handles.cancelar,'enable','off');
 set(handles.text,'visible','off');
 set(handles.motor1,'enable','on');
+
