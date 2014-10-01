@@ -449,6 +449,8 @@ while (ud.fin == 0)
         end
     end
 end
+close all;
+stitch_filas;
     
 % --- Executes on button press in primer_foto.
 function primer_foto_Callback(hObject, eventdata, handles)

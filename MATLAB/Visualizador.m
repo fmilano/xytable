@@ -22,7 +22,7 @@ function varargout = Visualizador(varargin)
 
 % Edit the above text to modify the response to help Visualizador
 
-% Last Modified by GUIDE v2.5 29-May-2014 16:31:44
+% Last Modified by GUIDE v2.5 26-Sep-2014 15:07:34
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -60,10 +60,12 @@ guidata(hObject, handles);
 
 % UIWAIT makes Visualizador wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
-clc;
 ud = get(0,'userdata');
+ud = [];
 ud.titulo = 'Muestra_01';
 load(['/home/axel/Desktop/XYTableAcData/data_' ud.titulo '.mat']);
+
+
 
 % Tamaño en pixeles del axes del visualizador
 ud.true_size = [1000 600];
@@ -83,7 +85,23 @@ ud.ylim = [1 ud.sizeY];
 % Porcion extra porcentual hacia los 4 sentidos, para permitir el Span
 ud.porcion_extra = 0.3;
 
-[ud.imagen,ud.escala,ud.num_imagenes] = find_image(['Final_' ud.titulo],ud.xlim,ud.ylim,ud.im_pos,[1000 600],0);
+% Si nunca antes calculó la imagen de maximo zoom out, la calcula. Si no,
+% la carga de memoria
+if (exist(['/home/axel/Desktop/XYTableAcData/' ud.titulo '/datos_visualizador.mat']) == 0)
+    [imagen,escala,num_imagenes] = find_image(['Final_' ud.titulo],ud.xlim,ud.ylim,ud.im_pos,[1000 600],0);
+    ud.escala = escala;
+    ud.num_imagenes = num_imagenes;
+    save(['/home/axel/Desktop/XYTableAcData/' ud.titulo '/datos_visualizador.mat'],'imagen','escala','num_imagenes');
+else
+    load(['/home/axel/Desktop/XYTableAcData/' ud.titulo '/datos_visualizador.mat']);
+    ud.escala = escala;
+    ud.num_imagenes = num_imagenes;
+end
+
+% Se guarda por única vez la imagen dentro del user data
+ud.imagen = imagen;
+ud.sizeX_imagen = size(imagen,2);
+ud.sizeY_imagen = size(imagen,1);
 
 ud.cambio_zoom = 0;
 ud.cambio_titulo = 0;
@@ -92,6 +110,9 @@ ud.reset = 0;
 ud.zoom_out_final = 1;
 ud.zoom = 1;
 ud.pan = 0;
+
+ud.zooms_discretos = [100 50 25 12.5];
+ud.porcentaje_discreto = 100;
 set(0,'userdata',ud);
 
 set(handles.text_titulo,'string',ud.titulo); 
@@ -109,13 +130,17 @@ function varargout = Visualizador_OutputFcn(hObject, eventdata, handles)
 varargout{1} = handles.output;
 end
 
-% Cada vez que se hace zoom se devuelve la zona de zoom de la imagen 
-% (en pixeles de la imagen original)
+
+
+
+
+%%   *************** CALLBACK DEL ZOOM *********************  %
+
 function [] = myPostCallback_zoom(obj,event_obj)
 
     ud = get(0,'userdata');
     ud.zoom_out_final = 0;
-    
+     
     % Si entra es porque hubo un zoom out
     if (diff(xlim) > ud.true_size*0.99)
         % Se escribe el zoom out en pixeles absolutos de la imagen total
@@ -131,23 +156,51 @@ function [] = myPostCallback_zoom(obj,event_obj)
         end
         
     else
+        % Si estoy en una imagen de zoom continuo
+        if (ud.porcentaje_discreto < ud.zooms_discretos(end))
+            % Se resizea el limiteY, para conservar la simetria del axes
+            limiteX = round(xlim);
+            limiteY = round(ylim);
+            %limiteY(2) = limiteY(1) + round(diff(limiteX)*(ud.true_size(2)/ud.true_size(1)));
+
+            % Se convierte a pixeles de la imagen original
+            ud.xlim = ud.porcionX(1) + round((limiteX-1)/ud.escala);
+            ud.ylim = ud.porcionY(1) + round((limiteY-1)/ud.escala);
         
-        % Se resizea el limiteY, para conservar la simetria del axes
-        limiteX = round(xlim);
-        limiteY = round(ylim);
-        limiteY(2) = limiteY(1) + round(diff(limiteX)*(ud.true_size(2)/ud.true_size(1)));
-        
-        % Se convierte a pixeles de la imagen original
-        ud.xlim = ud.porcionX(1) + round((limiteX-1)/ud.escala);
-        ud.ylim = ud.porcionY(1) + round((limiteY-1)/ud.escala);
+        % Si estoy en una imagen de zoom discreto
+        else
+            % Conversion de pixeles de la imagen mostrada en pantalla a pixeles de
+            % la imagen original (píxeles absolutos)
+            ud.xlim = round((xlim/ud.sizeX_imagen)*ud.sizeX);
+            ud.ylim = round((ylim/ud.sizeY_imagen)*ud.sizeY);
+        end
     
     end
     ud.cambio_zoom = 1;
     ud.zoom = 1;
     ud.pan = 0;
-    %ud.escala = ud.true_size/max(diff(ud.xlim),diff(ud.ylim));
-    set(0,'userdata',ud);  
+
+    ud.porcentaje = min(100*diff(ud.ylim)/ud.sizeY,100*diff(ud.xlim)/ud.sizeX);
+    
+    
+    
+    if (ud.porcentaje < ud.zooms_discretos(end) -1)
+        ud.porcentaje_discreto = ud.porcentaje;
+    else
+        ud.porcentaje = round(ud.porcentaje*10)/10;
+        ud.porcentaje_discreto = ud.zooms_discretos(find(abs(ud.zooms_discretos - ud.porcentaje) == min(abs(ud.zooms_discretos - ud.porcentaje))));
+    end
+
+    set(0,'userdata',ud);
 end
+
+
+
+
+
+
+
+%%   **************** CALLBACK DEL PAN *********************  %
 
 function [] = myPostCallback_pan(obj,event_obj)
     % Se escribe el pan en pixeles absolutos de la imagen total
@@ -157,23 +210,40 @@ function [] = myPostCallback_pan(obj,event_obj)
     if (ud.zoom_out_final == 1)
         return;
     end
-    
-    % Se resizea el limiteY, para conservar la simetria del axes
-    limiteX = round(xlim);
-    limiteY = round(ylim);
-    limiteY(2) = limiteY(1) + round(diff(limiteX)*(ud.true_size(2)/ud.true_size(1)));
-    
-    % Conversión entre limiteXY (de 1 a 1000) y porcion (pixeles absolutos)
-    ud.xlim = round(ud.porcionX(1) + (1/ud.escala)*(limiteX-1));
-    ud.ylim = round(ud.porcionY(1) + (1/ud.escala)*(limiteY-1));
 
+    % Si estoy en una imagen de zoom continuo
+    if (ud.porcentaje_discreto < ud.zooms_discretos(end))
+        % Se resizea el limiteY, para conservar la simetria del axes
+        limiteX = round(xlim);
+        limiteY = round(ylim);
+        %limiteY(2) = limiteY(1) + round(diff(limiteX)*(ud.true_size(2)/ud.true_size(1)));
+
+        % Conversión entre limiteXY (de 1 a 1000) y porcion (pixeles absolutos)
+        ud.xlim = round(ud.porcionX(1) + (1/ud.escala)*(limiteX-1));
+        ud.ylim = round(ud.porcionY(1) + (1/ud.escala)*(limiteY-1));
+    
+    % Si estoy en una imagen de zoom discreto
+    else
+        % Conversion de pixeles de la imagen mostrada en pantalla a pixeles de
+        % la imagen original (píxeles absolutos)
+        ud.xlim = round((xlim/ud.sizeX_imagen)*ud.sizeX);
+        ud.ylim = round((ylim/ud.sizeY_imagen)*ud.sizeY);
+    end
+    
+    
     ud.cambio_zoom = 1;
     ud.zoom = 0;
     ud.pan = 1;
     set(0,'userdata',ud);
+    
 end
 
-% --- Executes on button press in comenzar.
+
+
+
+
+%%   *************** PROGRAMA PRINCIPAL *********************  %
+
 function comenzar_Callback(hObject, eventdata, handles)
     % hObject    handle to comenzar (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
@@ -185,9 +255,13 @@ function comenzar_Callback(hObject, eventdata, handles)
     set(handles.resetear,'visible','on');
     ud = get(0,'userdata');
     
+    % Se borra la imagen del userdata
+    imagen = ud.imagen;
+    ud.imagen = [];
+    
     num_imagenes = ud.num_imagenes;
     axes(handles.axes);
-    imshow(ud.imagen);
+    imshow(imagen);
     set(handles.text1,'String',['Imágenes cargadas: ' num2str(num_imagenes)]);
 
     h = zoom;
@@ -208,7 +282,6 @@ function comenzar_Callback(hObject, eventdata, handles)
             pan off;
             hw = waitbar(0,'Buffering Image...');
             ud.cambio_zoom = 0;
-            set(0,'userdata',ud);
             
             % Si aun no se hizo el máximo zoom out
             if (ud.zoom_out_final == 0)
@@ -227,26 +300,90 @@ function comenzar_Callback(hObject, eventdata, handles)
             ud.porcionY = porcionY;
             set(0,'userdata',ud);
                     
-            waitbar(0,hw);
-            [imagen,ud.escala,num_imagenes] = find_image(['Final_' ud.titulo],porcionX,porcionY,ud.im_pos,(1+ud.porcion_extra)*ud.true_size,hw);
-            [sizeY,sizeX,sizeZ] = size(imagen);
-            set(handles.text1,'String',['Imágenes cargadas: ' num2str(num_imagenes)]);
-            set(0,'userdata',ud);
+            % Porcentaje 100 %
+            if (ud.zoom_out_final == 1)
+                % Si ya se hizo antes el zoom out final, se carga la imagen. Si
+                % no, se genera y se guarda
+                if (exist(['/home/axel/Desktop/XYTableAcData/' ud.titulo '/datos_visualizador.mat']) == 0)
+                    [imagen,escala,num_imagenes] = find_image(['Final_' ud.titulo],porcionX,porcionY,ud.im_pos,(1+ud.porcion_extra)*ud.true_size,hw);
+                    ud.escala = escala;
+                    ud.num_imagenes = num_imagenes;
+                    save(['/home/axel/Desktop/XYTableAcData/' ud.titulo '/datos_visualizador.mat'],'imagen','escala','num_imagenes');
+                else
+                    load(['/home/axel/Desktop/XYTableAcData/' ud.titulo '/datos_visualizador.mat']);
+                    ud.escala = escala;
+                    set(handles.text1,'String',['Imágenes cargadas: ' num2str(num_imagenes)]);
+                    
+                end
+                ud.sizeX_imagen = size(imagen,2);
+                ud.sizeY_imagen = size(imagen,1);
+                ud.porcentaje_discreto = 100;
+                set(0,'userdata',ud);
+                axes(handles.axes);imshow(imagen);zoom reset;
+                set(handles.text_zoom,'string','x 1');
             
-            if (ud.zoom_out_final == 0)
+            % Porcentajes discretos
+            elseif (sum(ud.porcentaje_discreto == ud.zooms_discretos))
+                
+                set(handles.text_zoom,'string',['x ' num2str(round(100/ud.porcentaje_discreto))]);
+                
+                % Si nunca antes calculó la imagen del zoom discreto, la
+                % calcula. Si no, la carga.
+                if (exist(['/home/axel/Desktop/XYTableAcData/' ud.titulo '/datos_visualizador_' num2str(round(ud.porcentaje_discreto)) '.mat']) == 0)
+
+                    limiteX = ud.xlim;
+                    limiteY = ud.ylim;
+                    ud.xlim = [1 ud.sizeX];
+                    ud.ylim = [1 ud.sizeY];
+                    [imagen,escala,num_imagenes] = find_image(['Final_' ud.titulo],ud.xlim,ud.ylim,ud.im_pos,(100/ud.porcentaje_discreto)*[1000 600],hw);
+                    [sizeY,sizeX,sizeZ] = size(imagen);
+                    limiteX = ((limiteX)/ud.sizeX)*sizeX;
+                    limiteY = ((limiteY)/ud.sizeY)*sizeY;
+                    ud.sizeX_imagen = sizeX;
+                    ud.sizeY_imagen = sizeY;
+                    ud.escala = escala;
+                    ud.num_imagenes = num_imagenes;
+                    num_imagenes = 1;
+
+                    save(['/home/axel/Desktop/XYTableAcData/' ud.titulo '/datos_visualizador_' num2str(round(ud.porcentaje_discreto)) '.mat'],'imagen','escala','num_imagenes','limiteX','limiteY');
+                    axes(handles.axes);imshow(imagen);zoom reset;xlim(limiteX);ylim(limiteY);
+                else
+                    if (ud.zoom == 1)
+                        load(['/home/axel/Desktop/XYTableAcData/' ud.titulo '/datos_visualizador_' num2str(round(ud.porcentaje_discreto)) '.mat']);
+                        ud.escala = escala;
+                        ud.num_imagenes = num_imagenes;
+                        [sizeY,sizeX,sizeZ] = size(imagen);
+                        ud.sizeX_imagen = sizeX;
+                        ud.sizeY_imagen = sizeY;
+                        limiteX = ((ud.xlim)/ud.sizeX)*sizeX;
+                        limiteY = ((ud.ylim)/ud.sizeY)*sizeY;
+                        axes(handles.axes);imshow(imagen);zoom reset;xlim(limiteX);ylim(limiteY);
+                        set(0,'userdata',ud);
+                    end
+                end
+
+                                
+            % Porcentajes chicos, continuos
+            else
+                [imagen,ud.escala,num_imagenes] = find_image(['Final_' ud.titulo],porcionX,porcionY,ud.im_pos,(1+ud.porcion_extra)*ud.true_size,hw);
+                [sizeY,sizeX,sizeZ] = size(imagen);
+                set(handles.text1,'String',['Imágenes cargadas: ' num2str(num_imagenes)]);
+                set(0,'userdata',ud);
+                
                 % Limites dentro de la porcion de imagen obtenida
                 factor_extra = (1-(1/(1+2*ud.porcion_extra)))/2;
                 extraX_lim = round(sizeX*factor_extra);
                 extraY_lim = round(sizeY*factor_extra);
                 limiteX = [extraX_lim sizeX-extraX_lim];
-                limiteY = [extraY_lim sizeY-extraY_lim];            
+                limiteY = [extraY_lim sizeY-extraY_lim];   
+                
+                % Se actualiza la pantalla
                 axes(handles.axes);imshow(imagen);zoom reset;xlim(limiteX);ylim(limiteY);
-            else
-                axes(handles.axes);imshow(imagen);zoom reset;
+                set(handles.text_zoom,'string',['x ' num2str(round(100/ud.porcentaje))]);
             end
             
-            % Fin del waitbar, se actualiza la imagen y se vuelve a
-            % permitir ela herramienta de zoom o de pan
+            % Fin del waitbar, se actualiza la imagen y se vuelven a
+            % permitir las herramientas de zoom o de pan
             waitbar(1,hw);
             close(hw);
             if (ud.zoom == 1)
@@ -265,6 +402,7 @@ function comenzar_Callback(hObject, eventdata, handles)
                 ud.ylim = [1 ud.sizeY];
                 ud.cambio_zoom = 1;
                 ud.zoom_out_final = 1;
+                ud.porcentaje_discreto = 100;
                 set(0,'userdata',ud);
             end
             
@@ -293,6 +431,7 @@ function comenzar_Callback(hObject, eventdata, handles)
     end
 end
 
+%%   *************** OTROS BOTONES *********************  %%
 
 % --- Executes when user attempts to close figure1.
 function figure1_CloseRequestFcn(hObject, eventdata, handles)

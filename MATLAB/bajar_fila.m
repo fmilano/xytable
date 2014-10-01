@@ -1,7 +1,7 @@
 % Matriz: n filas del tipo:
 % [Indice de primer imagen, cantidad de imagenes, sentido, sizeX total]
 
-function [] = bajar_fila(titulo,matriz)
+function [] = bajar_fila(titulo,matriz,handles)
 
     ud = get(0,'userdata');
     num_filas = size(matriz,1);
@@ -56,7 +56,8 @@ function [] = bajar_fila(titulo,matriz)
         set(0,'userdata',ud);
         
         % Calculo el mov entre las dos filas
-        mov = match(fila1,fila2,20,0.7,'preview')/escala;  
+        [mov,mp1,mp2,~] = match(fila1,fila2,20,0.7,'preview');  
+        mov = mov/escala;
         
         mov_estimado = ud.const.mov_estimado/escala;
         margen_mov = ud.const.margen_mov/escala;
@@ -66,7 +67,16 @@ function [] = bajar_fila(titulo,matriz)
             disp('Se forzó el stitching');
             ud.forzar_coincidencia_stitching = 1;
             set(0,'userdata',ud);
-            mov = match(fila1,fila2,20,0.7,'preview')/escala;
+            [mov,mp1,mp2,~] = match(fila1,fila2,20,0.7,'preview');
+            mov = mov/escala;
+        end
+        
+        % Se muestran los puntos de coincidencia entre las dos filas
+        if (~isempty(handles))
+            axes(handles.axes1_1);
+            imshow(fila1);hold on;plot(mp1);title(['Fila ' num2str(i)]);
+            axes(handles.axes1_2);
+            imshow(fila2);hold on;plot(mp2);title(['Fila ' num2str(i+1)]);
         end
         
         %mov(2) > 0 --> Im2 a la derecha de im1
@@ -172,13 +182,14 @@ function [] = bajar_fila(titulo,matriz)
                 fila1 = fila1(:,1:min_size,:);
                 fila2 = fila2(:,1:min_size,:);
             end
-            
-            %figure(2);subplot(2,1,1);imshow(fila1);subplot(2,1,2);imshow(fila2);
 
             % Se stitchean los recortes
             im_final = stitch(fila1,fila2,mov-inicio_Y+1,0,0);
             
-            %figure(3);imshow(im_final);
+            if (~isempty(handles))
+                axes(handles.axes2);imshow(im_final);title(['Imagen numero ' num2str(num_im_fila+1)]);
+            end
+            
             
              
             % Si no es la ultima fila se toma el stitcheo hasta el fin 

@@ -102,7 +102,7 @@ function [im_final,im_siguiente] = stitch(im1,im2,mov,sentido,sizeX)
         % Matrices de pesos en la overlap zone
         distancia_1 = (1:size(pixel1_mat,1))' * ones(1,size(pixel1_mat,2));
         
-        weight_1 = (1./distancia_1).^4;
+        weight_1 = (1./distancia_1).^1;
         weight_2 = flipud(weight_1);
         sum_weight = weight_1 + weight_2;
         weight_normalized_1 = weight_1./sum_weight;
