@@ -39,10 +39,19 @@ loadlibrary('libcameraControl.so', 'cameraControl.h');
 
 % Inicialización de todas las constantes y variables de configuración del
 % sistema
+ud = get(0,'userdata');
+ud.modo = 'hd';
+set(0,'userdata',ud);
 configuracion_constantes(handles);
+
 
 ud = get(0,'userdata');
 ud.test_i = 1;
+ud.indice_foto = 1;
+ud.factor_ld = 0.033;
+ud.tiempo_espera = 1;
+ud.ld_ftype = 4;
+ud.hd_image_repetition = 5;
 set(0,'userdata',ud);
 set(handles.text_foto,'string','Tome la primera foto en el borde superior izquierdo de la muestra');
 set(handles.text_sesion,'string',ud.titulo);
@@ -101,11 +110,15 @@ if (init == 1)
             image_corregida = ud.image;
             % Se corrige la luz de la imagen (si así se desea)
             if (get(handles.check_correccion,'value') == 1)
-                image_corregida = corregir_imagen(image_corregida,ud.kernel);
+                image_corregida = corregir_imagen(image_corregida,ud.kernel_pv);
             end
             % Se ecualiza la imagen (si así se desea)
             if (get(handles.check_eq,'value') == 1)
                 image_corregida = eq_rgb(image_corregida);
+            end
+            % Se realiza la corrección geométrica (si así se desea)
+            if (get(handles.check_geom,'value') == 1)
+                image_corregida = correccion_geometrica(image_corregida, ud.factor_ld,ud.ld_ftype);
             end
             % Se muestra en pantalla la imagen
             imshow(image_corregida,'parent',handles.axes1);
@@ -135,25 +148,33 @@ set(hObject,'enable','off');
 set(handles.primer_foto,'enable','off');
 set(handles.text_foto,'visible','off');
 set(handles.comunicacion,'enable','off');
+set(handles.pb_nueva_foto,'enable','off');
 ud = get(0,'userdata');
 
 % Se genera un directorio para las fotos a tomar
 mkdir('/home/axel/Desktop/XYTableAcData',ud.titulo);
 
 % Se saca la foto de preview y la de alta definicion
+pause(ud.tiempo_espera);
 first_image = get_preview(handles);
-first_image_HD = get_image(handles);
 
+first_image_HD = get_best_quality_image(handles,ud.hd_image_repetition);
 
+if (strcmp(ud.modo,'pv'))
+    kernel = ud.kernel_pv;
+else
+    kernel = ud.kernel_hd;
+end     
 
 % Se corrige la luz de la imagen (si así se desea)
 if (get(handles.check_correccion,'value') == 1)
-    first_image = corregir_imagen(first_image,ud.kernel);
-    first_image_HD = corregir_imagen(first_image_HD,imresize(ud.kernel,1/ud.preview_scale));
+    first_image = corregir_imagen(first_image,ud.kernel_pv);
+    first_image_HD = corregir_imagen(first_image_HD,kernel);
 end
 % Se realiza la corrección geométrica (si así se desea)
 if (get(handles.check_geom,'value') == 1)
-    first_image_HD = lensdistort(first_image_HD, 0.047,'padmethod','circular');
+    first_image = correccion_geometrica(first_image,ud.factor_ld,ud.ld_ftype);
+    first_image_HD = correccion_geometrica(first_image_HD,ud.factor_ld,ud.ld_ftype);
 end
 % Se ecualiza la imagen (si así se desea)
 if (get(handles.check_eq,'value') == 1)
@@ -183,7 +204,11 @@ while (ud.fin == 0)
     
     % Se corrige la luz de la imagen
     if (get(handles.check_correccion,'value') == 1)
-        second_image = corregir_imagen(second_image,ud.kernel);
+        second_image = corregir_imagen(second_image,ud.kernel_pv);
+    end
+    % Se realiza la corrección geométrica
+    if (get(handles.check_geom,'value') == 1)
+        second_image = correccion_geometrica(second_image,ud.factor_ld,ud.ld_ftype);
     end
     % Se ecualiza la imagen
     if (get(handles.check_eq,'value') == 1)
@@ -252,22 +277,26 @@ while (ud.fin == 0)
         
         % Condición de nueva foto alcanzada
         if ((mean_mov(1) > SPY_min) && (mean_mov(1) <= SPY_max))
-            disp('Nueva foto');
+%             disp('Nueva foto');
 
-            pause(0.1);
+            pause(ud.tiempo_espera);
             % Se saca la nueva foto de alta resolución
             ud.im1 = first_image_HD;
-            ud.im2 = get_image(handles);
+            ud.im2 = get_best_quality_image(handles,ud.hd_image_repetition);
             
             
-            
+            if (strcmp(ud.modo,'pv'))
+                kernel = ud.kernel_pv;
+            else
+                kernel = ud.kernel_hd;
+            end    
             % Se corrige la luz de la segunda imagen
             if (get(handles.check_correccion,'value') == 1)
-                ud.im2 = corregir_imagen(ud.im2,imresize(ud.kernel,1/ud.preview_scale));
+                ud.im2 = corregir_imagen(ud.im2,kernel);
             end
             % Se realiza la corección geométrica
             if (get(handles.check_geom,'value') == 1)
-                ud.im2 = lensdistort(ud.im2, 0.047,'padmethod','circular');
+                ud.im2 = correccion_geometrica(ud.im2,ud.factor_ld,ud.ld_ftype);
             end
             
             % Se ecualiza la segunda imagen
@@ -275,19 +304,26 @@ while (ud.fin == 0)
                 ud.im2 = eq_rgb(ud.im2);
             end
 
-            
-            % Se resamplea la imagen a escala preview para calcular el mov
-            ud.im1_prev = imresize(ud.im1,ud.preview_scale);
-            ud.im2_prev = imresize(ud.im2,ud.preview_scale);
-            
-            % Se calcula el movimiento entre fotos
-            ud.mov = match(ud.im1_prev,ud.im2_prev,20,0.7,'preview')/ud.preview_scale;
-            
+%            ud.mov = match(ud.im1,ud.im2,20,0.7,'hd'); Debug
+            ud.mov = mov;
+
             % Si el movimiento no se parece al calculado en el preview, se
             % descarta, y se utiliza el del preview
             if (sum(abs(ud.mov - mov/ud.preview_scale) > MAXIMA_DIFERENCIA_MOV))
-                ud.mov = mov/ud.preview_scale;
-                disp(['En la imagen final ' num2str(foto_indice+1) ' se utilizó el MOV del preview']);
+                % Se resamplea la imagen a escala preview para calcular el mov
+                ud.im1_prev = imresize(ud.im1,ud.preview_scale);
+                ud.im2_prev = imresize(ud.im2,ud.preview_scale);
+                 % Se calcula el movimiento entre fotos
+                ud.mov = match(ud.im1_prev,ud.im2_prev,20,0.7,'preview')/ud.preview_scale;
+                disp(['En la imagen final ' num2str(foto_indice+1) ' se resampleó la imagen HD']);
+                
+                if (sum(abs(ud.mov - mov/ud.preview_scale) > MAXIMA_DIFERENCIA_MOV))
+                    ud.mov = mov/ud.preview_scale;
+                    disp(['En la imagen final ' num2str(foto_indice+1) ' se utilizó el MOV del preview']);
+                elseif (ud.mov(1) > 0)
+                    ud.mov(1) = 0;
+                end
+                
             elseif (ud.mov(1) > 0)
                 ud.mov(1) = 0;
             end
@@ -302,6 +338,7 @@ while (ud.fin == 0)
 
             % Se guarda la imagen final
             imwrite(im_final,['/home/axel/Desktop/XYTableAcData/' ud.titulo '/' ud.titulo '_0' num2str(foto_indice) '.png'],'png');
+            
             set(handles.text_im,'string',['Numero de imagenes: ' num2str(foto_indice)]);
             axes(handles.axes1);imshow(first_image);
             sizeX_total = sizeX_total + size(im_final,2);
@@ -346,6 +383,11 @@ while (ud.fin == 0)
                     ud.matriz_filas(ud.num_fila-1,4) = sizeX_total;
                     sizeX_total = 0;
                     
+                    % Se salvan los cambios
+                    data{1} = ud.titulo;
+                    data{2} = ud.matriz_filas;
+                    save(['/home/axel/Desktop/XYTableAcData/data_' ud.titulo '.mat'],'data');
+                    
                     % Se baja hacia la siguiente fila
                     pasosY = ud.const.pasosY;
                     int = mover_motor(ud.MOTOR2,-pasosY);
@@ -353,15 +395,22 @@ while (ud.fin == 0)
                     contador_pasos_y = contador_pasos_y + pasosY;
                     set(handles.text_pasosY,'string',['Pasos en Y: ' num2str(contador_pasos_y) ' = ' num2str(contador_pasos_y/ud.MM_PASOS) ' mm']);
                     % Se toma la primera foto de la nueva fila
-                    first_image_HD = get_image(handles);
+                    pause(ud.tiempo_espera);
+                    first_image_HD = get_best_quality_image(handles,ud.hd_image_repetition);
+                    
+                    % Se corrige la luz
+                    if (get(handles.check_correccion,'value') == 1)
+                        first_image_HD = corregir_imagen(first_image_HD,kernel);
+                    end
+                    % Se realiza la corección geométrica
+                    if (get(handles.check_geom,'value') == 1)
+                        first_image_HD = correccion_geometrica(first_image_HD,ud.factor_ld,ud.ld_ftype);
+                    end
                     % Se ecualiza
                     if (get(handles.check_eq,'value') == 1)
                         first_image_HD = eq_rgb(first_image_HD);
                     end
-                    % Se corrige la luz
-                    if (get(handles.check_correccion,'value') == 1)
-                        first_image_HD = corregir_imagen(first_image_HD,imresize(ud.kernel,1/ud.preview_scale));
-                    end
+                    
                     first_image = imresize(first_image_HD,ud.preview_scale);
                     axes(handles.axes1);imshow(first_image);
                     
@@ -389,7 +438,18 @@ while (ud.fin == 0)
 
                 % Si no hubo respuesta del micro en tiempo y forma
                 if (int == 0)
-                    error('Error de comunicación con el micro');
+                    disp('El micro no respondio, se reenvian los datos');
+                    pause(4);
+                    int = mover_motor(ud.MOTOR2,pasosY);
+                    if (int == 0)
+                        disp('Se resetea la comunicacion');
+                        ud.ser = comenzar_comunicacion(ud.COM,9600);set(0,'userdata',ud);
+                        pause(1);
+                        int = mover_motor(ud.MOTOR2,pasosY);
+                        if (int == 0)
+                            error('Error de comunicación con el micro');
+                        end
+                    end
                 end
             end
         end
@@ -417,7 +477,7 @@ while (ud.fin == 0)
             end
             
         else
-            disp('Primer movimiento');
+%             disp('Primer movimiento');
             mean_mov = [0 0];
         end
         
@@ -550,7 +610,7 @@ set(handles.push_abajo,'enable','off');
 prompt = {'Extension en X de la muestra (en mm):','Extension en Y de la muestra (en mm):'};
 dlg_title = 'Extension de la muestra';
 num_lines = 1;
-def = {'60','40'};
+def = {'53','40'};
 answer = inputdlg(prompt,dlg_title,num_lines,def);
 if (~isempty(answer))
     MM_PASOS = 150;
@@ -763,3 +823,44 @@ function check_geom_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of check_geom
+
+
+% --- Executes on button press in pb_nueva_foto.
+function pb_nueva_foto_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_nueva_foto (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+ud = get(0,'userdata');
+ud.indice_foto = ud.indice_foto+1;
+imagen = get_image(handles);
+if (get(handles.check_geom,'value') == 1)
+    imagen = correccion_geometrica(imagen,ud.factor_ld,ud.ld_ftype);
+end
+imwrite(imagen,['../../fotos_calibracion/imagen_0' num2str(ud.indice_foto) '.jpg']);
+set(0,'userdata',ud);
+
+
+
+function edit3_Callback(hObject, eventdata, handles)
+% hObject    handle to edit3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit3 as text
+%        str2double(get(hObject,'String')) returns contents of edit3 as a double
+value = get(hObject,'String');
+ud = get(0,'userdata');
+ud.factor_ld = str2double(value);
+set(0,'userdata',ud);
+
+% --- Executes during object creation, after setting all properties.
+function edit3_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

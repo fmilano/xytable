@@ -4,7 +4,7 @@ function [kernel] = calibracion(imagen)
 
     if isempty(imagen)
         % Se lee la imagen de calibración (sin muestra)
-        im = double(imread('calibracion.jpg'))/255;
+        im = double(imread('calibracion.png'))/255;
     else
         im = double(imagen)/255;
     end

@@ -61,8 +61,21 @@ guidata(hObject, handles);
 % UIWAIT makes Visualizador wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 ud = get(0,'userdata');
-ud = [];
-ud.titulo = 'Muestra_01';
+
+
+% Se chequea la existencia de muestras anteriores, para no pisarlas con la
+% sesión actual
+fin = 0;
+i = 1;
+while (fin == 0)
+    if (exist(['/home/axel/Desktop/XYTableAcData/Muestra_0' num2str(i)]))
+        fin = 1;
+    else
+        i = i+1;
+    end
+end
+ud.titulo = ['Muestra_0' num2str(i)];
+
 load(['/home/axel/Desktop/XYTableAcData/data_' ud.titulo '.mat']);
 
 
@@ -79,8 +92,8 @@ num_filas = size(final_im_pos,1);
 % Se toman como limites la mayor imagen reconstruida posible
 ud.sizeX = min(ud.im_pos(1:num_filas,end,1));
 ud.sizeY = ud.im_pos(num_filas,1,1);
-ud.xlim = [1 ud.sizeX];
-ud.ylim = [1 ud.sizeY];
+ud.xlim = [1 ud.sizeX-1000];
+ud.ylim = [1 ud.sizeY-1000];
 
 % Porcion extra porcentual hacia los 4 sentidos, para permitir el Span
 ud.porcion_extra = 0.3;

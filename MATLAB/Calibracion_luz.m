@@ -83,7 +83,10 @@ function aceptar_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 ud = get(0,'userdata');
-ud.kernel = calibracion(ud.image);
+imagen = get_image(ud.handles);
+% ud.kernel = calibracion(ud.image);
+ud.kernel_hd = calibracion(imagen);
+ud.kernel_pv = imresize(ud.kernel_hd,ud.preview_scale);
 set(0,'userdata',ud);
 close(handles.figure1);
 

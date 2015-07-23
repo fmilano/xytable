@@ -21,4 +21,5 @@ function [image] = get_image (handles)
     B = imagen(3:3:end);
     rgb = [R G B];
     image = reshape(rgb, [w h 3]);
+    image = image(201:end-200,:,:);
 end

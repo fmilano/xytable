@@ -22,7 +22,7 @@ function varargout = stitch_filas(varargin)
 
 % Edit the above text to modify the response to help stitch_filas
 
-% Last Modified by GUIDE v2.5 26-Sep-2014 11:35:15
+% Last Modified by GUIDE v2.5 18-Dec-2014 10:02:30
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -60,7 +60,6 @@ guidata(hObject, handles);
 
 % UIWAIT makes stitch_filas wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
-clc;
 
 ud = get(0,'userdata');
 titulo = ud.titulo;
@@ -69,6 +68,10 @@ set(0,'userdata',ud);
 configuracion_constantes(handles);
 ud = get(0,'userdata');
 ud.titulo = titulo;
+ud.mov_up = 0;
+ud.mov_down = 0;
+ud.mov_left = 0;
+ud.mov_right = 0;
 set(0,'userdata',ud);
 
 % --- Outputs from this function are returned to the command line.
@@ -87,6 +90,7 @@ function comenzar_Callback(hObject, eventdata, handles)
 % hObject    handle to comenzar (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+set(hObject,'enable','off');
 ud = get(0,'userdata');
 crear_imagenes_finales(ud.titulo,handles);
 close all;
@@ -120,3 +124,50 @@ if (~isempty(answer))
 end
 set(0,'userdata',ud);
 set(handles.text_titulo,'string',ud.titulo);
+
+
+% --- Executes on button press in pb_aceptar.
+function pb_aceptar_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_aceptar (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+ud = get(0,'userdata');
+ud.fin_mover_puntos = 1;
+set(0,'userdata',ud);
+
+
+% --- Executes on button press in pb_up.
+function pb_up_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_up (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+ud = get(0,'userdata');
+ud.mov_up = 1;
+set(0,'userdata',ud);
+
+% --- Executes on button press in pb_down.
+function pb_down_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_down (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+ud = get(0,'userdata');
+ud.mov_down = 1;
+set(0,'userdata',ud);
+
+% --- Executes on button press in pb_left.
+function pb_left_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_left (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+ud = get(0,'userdata');
+ud.mov_left = 1;
+set(0,'userdata',ud);
+
+% --- Executes on button press in pb_right.
+function pb_right_Callback(hObject, eventdata, handles)
+% hObject    handle to pb_right (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+ud = get(0,'userdata');
+ud.mov_right = 1;
+set(0,'userdata',ud);

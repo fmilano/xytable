@@ -1,21 +1,39 @@
 function [] = configuracion_constantes(handles)
     ud = get(0,'userdata');
+    modo = ud.modo;
     load('default.mat');
     % **************************************************** %
     % *************Variables no configurables************* %
     % **************************************************** %
     ud = [];
-    
+    ud.modo = modo;
     % Valores dependientes de la cámara utilizada
-    ud.sizeX                            = 1200;
+    
+    if (strcmp(modo,'pv'))
+        ud.sizeX                        = 240
+    else
+        ud.sizeX                        = 1200;
+    end   
+    
     ud.sizeX_preview                    = 240;
-    ud.sizeY_preview                    = 320;
-    ud.preview_scale                    = ud.sizeX_preview/ud.sizeX;
+    ud.sizeY_preview                    = 240;
+    
+    if (strcmp(modo,'pv'))
+        ud.preview_scale                = 1;
+    else
+        ud.preview_scale                = ud.sizeX_preview/ud.sizeX;
+    end        
     
     % Valores independientes
     ud.fin                              = 0;
     ud.comenzar                         = 0;
-    ud.kernel                           = def.kernel;
+    if (~isempty(def))
+        ud.kernel_pv                    = def.kernel_pv;
+        ud.kernel_hd                    = def.kernel_hd;     
+    else
+        ud.kernel_pv                    = 1;
+        ud.kernel_pv                    = 1;
+    end
     ud.handles                          = handles;
     ud.calibracion_activa               = 0;
     ud.total_pasos_x                    = 500;
@@ -99,12 +117,12 @@ function [] = configuracion_constantes(handles)
     % con la que funciona el sistema de control.
     % Las unidades son píxeles, normalizados a alta resolución.
     % Valor por default: 25 píxeles
-    ud.const.MAXIMA_DIFERENCIA_MOV = 25;    
+    ud.const.MAXIMA_DIFERENCIA_MOV = 15;    
     
     % Cantidad de pasos que se darán en el sentido Y cada vez que se desee
     % pasar a una nueva fila de imágenes. Debe ser un valor positivo.
     % Valor por default: 400 pasos
-    ud.const.pasosY = 400;
+    ud.const.pasosY = 300;
     
     % Número de octavas para el match entre imágenes. Dependiendo del
     % tamaño de la imagen, puede ser beneficioso tomar un valor mayor de
@@ -113,7 +131,7 @@ function [] = configuracion_constantes(handles)
     ud.const.nunmOctaves_preview = 5;
 
     ud.const.escala_fila_stitching = 1/5;
-    ud.const.mov_estimado = ud.const.pasosY*ud.pasos_pixeles*ud.const.escala_fila_stitching/ud.preview_scale;
+    ud.const.mov_estimado = ud.const.pasosY*ud.pasos_pixeles/ud.preview_scale;
     ud.const.margen_mov = 0.25*ud.const.mov_estimado;
     
     % Cantidad de píxeles máximos que se considera puede desplazarse el

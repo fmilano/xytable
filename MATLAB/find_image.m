@@ -8,10 +8,10 @@ function [imagen,escala,num_imagenes] = find_image(titulo,ventanaX,ventanaY,pos_
     num_imagenes = 0;
     % Si la ventana X es mayor, se escala en X
     if (diff(ventanaX) > diff(ventanaY))
-        escala = true_size(1)/diff(ventanaX);
+        escala = true_size(1)/(diff(ventanaX)+1);
     % Si no, se escala en Y
     else
-        escala = true_size(2)/diff(ventanaY);
+        escala = true_size(2)/(diff(ventanaY)+1);
     end
     
     %escala = true_size(1)/max(diff(ventanaX),diff(ventanaY));
@@ -77,8 +77,12 @@ function [imagen,escala,num_imagenes] = find_image(titulo,ventanaX,ventanaY,pos_
                 num_imagenes = 0;
                 return;
             end
-            % Se baja la resolucion de la imagen a mostrar
-            fila_actual = [fila_actual imresize(porcion,escala)];
+            if (escala ~= 1)
+                % Se baja la resolucion de la imagen a mostrar
+                fila_actual = [fila_actual imresize(porcion,escala)];
+            else
+                fila_actual = [fila_actual porcion];
+            end
             i = i+1;            
         end
         

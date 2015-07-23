@@ -6,8 +6,8 @@ function [] = bajar_fila(titulo,matriz,handles)
     ud = get(0,'userdata');
     num_filas = size(matriz,1);
     % DEBUG
-    %num_filas = 7;
-    largo_nominal = 1000;           % Largo de tira de filas para realizar stitching
+%     largo_nominal = 2000;           % Largo de tira de filas para realizar stitching
+    
     
     if (num_filas == 1)
         return;
@@ -30,6 +30,8 @@ function [] = bajar_fila(titulo,matriz,handles)
         
         disp(['Fila ' num2str(i)]);
         
+        largo_nominal = 1000;
+        
         % Numero de imagen dentro de la fila actual
         num_im_fila = 0;
 
@@ -40,6 +42,7 @@ function [] = bajar_fila(titulo,matriz,handles)
         % Identifico la zona central de ambas filas 
         centro = round(matriz(i,4)/2);
         escala = ud.const.escala_fila_stitching;
+        escala = 1; % Debug
         
         lim_izq = max(centro-round(largo_nominal),1);
         lim_der = min([centro+round(largo_nominal) matriz(i,4) matriz(i+1,4)]);
@@ -55,28 +58,37 @@ function [] = bajar_fila(titulo,matriz,handles)
         ud.forzar_coincidencia = 0;
         set(0,'userdata',ud);
         
+        if (escala == 1)
         % Calculo el mov entre las dos filas
-        [mov,mp1,mp2,~] = match(fila1,fila2,20,0.7,'preview');  
-        mov = mov/escala;
+            [mov,mp1,mp2,~] = match(fila1,fila2,2,0.7,'hd');  
+        else
+            [mov,mp1,mp2,~] = match(fila1,fila2,20,0.7,'preview');  
+            mov = round(mov/escala);
+        end
         
-        mov_estimado = ud.const.mov_estimado/escala;
-        margen_mov = ud.const.margen_mov/escala;
+        
+        mov_estimado = ud.const.mov_estimado;
+        margen_mov = ud.const.margen_mov;
         
         % Si el mov no da dentro del rango de tolerancia, se fuerza
         if ((mov(1) < (mov_estimado-margen_mov) ) || (mov(1) > (mov_estimado+margen_mov)) )
             disp('Se forzó el stitching');
             ud.forzar_coincidencia_stitching = 1;
+            ud.handles = handles;
             set(0,'userdata',ud);
             [mov,mp1,mp2,~] = match(fila1,fila2,20,0.7,'preview');
-            mov = mov/escala;
+            mov = round(mov/escala);
         end
+
+        ud.forzar_coincidencia_stitching = 0;set(0,'userdata',ud);
         
         % Se muestran los puntos de coincidencia entre las dos filas
         if (~isempty(handles))
-            axes(handles.axes1_1);
+            axes(handles.axes1_1);hold off;
             imshow(fila1);hold on;plot(mp1);title(['Fila ' num2str(i)]);
-            axes(handles.axes1_2);
+            axes(handles.axes1_2);hold off;
             imshow(fila2);hold on;plot(mp2);title(['Fila ' num2str(i+1)]);
+            pause(0.01);
         end
         
         %mov(2) > 0 --> Im2 a la derecha de im1

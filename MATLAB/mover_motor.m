@@ -10,7 +10,9 @@ function [int] = mover_motor(motor,pasos)
                     fwrite(ud.ser,ud.MOTOR1_DERECHA);fwrite(ud.ser,abs(pasos_H));fwrite(ud.ser,abs(pasos_L));
                 catch
                     disp('Error en el Fwrite');
-                    pause(2);
+                    pause(1);
+                    ud.ser = comenzar_comunicacion(ud.COM,9600);set(0,'userdata',ud);
+                    pause(1);
                     fwrite(ud.ser,ud.MOTOR1_DERECHA);fwrite(ud.ser,abs(pasos_H));fwrite(ud.ser,abs(pasos_L));
                 end
             else
@@ -18,7 +20,9 @@ function [int] = mover_motor(motor,pasos)
                     fwrite(ud.ser,ud.MOTOR1_IZQUIERDA);fwrite(ud.ser,abs(pasos_H));fwrite(ud.ser,abs(pasos_L));
                 catch
                     disp('Error en el Fwrite');
-                    pause(2);
+                    pause(1);
+                    ud.ser = comenzar_comunicacion(ud.COM,9600);set(0,'userdata',ud);
+                    pause(1);
                     fwrite(ud.ser,ud.MOTOR1_IZQUIERDA);fwrite(ud.ser,abs(pasos_H));fwrite(ud.ser,abs(pasos_L));
                 end
             end
@@ -29,7 +33,9 @@ function [int] = mover_motor(motor,pasos)
                     fwrite(ud.ser,ud.MOTOR2_DERECHA);fwrite(ud.ser,abs(pasos_H));fwrite(ud.ser,abs(pasos_L));
                 catch
                     disp('Error en el Fwrite');
-                    pause(2);
+                    pause(1);
+                    ud.ser = comenzar_comunicacion(ud.COM,9600);set(0,'userdata',ud);
+                    pause(1);
                     fwrite(ud.ser,ud.MOTOR2_DERECHA);fwrite(ud.ser,abs(pasos_H));fwrite(ud.ser,abs(pasos_L));
                 end
             else
@@ -38,7 +44,9 @@ function [int] = mover_motor(motor,pasos)
                     fwrite(ud.ser,ud.MOTOR2_IZQUIERDA);fwrite(ud.ser,abs(pasos_H));fwrite(ud.ser,abs(pasos_L));
                 catch
                     disp('Error en el Fwrite');
-                    pause(2);
+                    pause(1);
+                    ud.ser = comenzar_comunicacion(ud.COM,9600);set(0,'userdata',ud);
+                    pause(1);
                     fwrite(ud.ser,ud.MOTOR2_IZQUIERDA);fwrite(ud.ser,abs(pasos_H));fwrite(ud.ser,abs(pasos_L));
                 end
             end       

@@ -28,9 +28,9 @@ function [pasos] = simulador_control(x_y,mov,sizeX,SP,sentido)
             mm = delta_porcentual*PORCx_MM;      
 
             if (pasos >= 0)
-                disp(['Moverse a la derecha ' num2str(abs(mm)) 'mm = ' num2str(abs(pasos)) ' pasos']);
+%                 disp(['Moverse a la derecha ' num2str(abs(mm)) 'mm = ' num2str(abs(pasos)) ' pasos']);
             else
-                disp(['Moverse a la izquierda ' num2str(abs(mm)) 'mm = ' num2str(abs(pasos)) ' pasos']);
+%                 disp(['Moverse a la izquierda ' num2str(abs(mm)) 'mm = ' num2str(abs(pasos)) ' pasos']);
             end
             
         case {'Y'} 
@@ -41,9 +41,9 @@ function [pasos] = simulador_control(x_y,mov,sizeX,SP,sentido)
             pasos = round(pasos);
             
             if (pasos < 0)
-                disp(['Moverse arriba ' num2str(abs(mm)) 'mm = ' num2str(abs(pasos)) ' pasos']);
+%                 disp(['Moverse arriba ' num2str(abs(mm)) 'mm = ' num2str(abs(pasos)) ' pasos']);
             else
-                disp(['Moverse abajo ' num2str(abs(mm)) 'mm = ' num2str(abs(pasos)) ' pasos']);
+%                 disp(['Moverse abajo ' num2str(abs(mm)) 'mm = ' num2str(abs(pasos)) ' pasos']);
             end
     end
 

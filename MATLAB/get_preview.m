@@ -21,4 +21,5 @@ function [image] = get_preview (handles)
     B = preview(3:3:end);
     rgb = [R G B];
     image = reshape(rgb, [w h 3]);
+    image = image(41:end-40,:,:);
 end

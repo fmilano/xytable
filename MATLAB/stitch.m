@@ -74,7 +74,7 @@ function [im_final,im_siguiente] = stitch(im1,im2,mov,sentido,sizeX)
 
         % Update of output_image, with the new overlap zone
         overlap_image = uint8(255*(pixel1_mat.* weight_normalized_1_3D + pixel2_mat.* weight_normalized_2_3D));
-        im_fin(:,mov(2)+1:mov(2)+size(pixel1_mat,2),:) = overlap_image;
+%         im_fin(:,mov(2)+1:mov(2)+size(pixel1_mat,2),:) = overlap_image;
 
         if (sentido == DERECHA)
             im_siguiente = im_fin(:,end-sizeX:end,:);
@@ -83,7 +83,7 @@ function [im_final,im_siguiente] = stitch(im1,im2,mov,sentido,sizeX)
             im_final = im_fin(:,sizeX+1:end,:);
             im_siguiente = im_fin(:,1:sizeX,:); 
         end
-       %figure;imshow([im_siguiente im_final]);  % Para la izquierda
+%        figure;imshow([im_siguiente im_final]);  % Para la izquierda
     
     % Si el sentido es abajo
     else
@@ -102,7 +102,7 @@ function [im_final,im_siguiente] = stitch(im1,im2,mov,sentido,sizeX)
         % Matrices de pesos en la overlap zone
         distancia_1 = (1:size(pixel1_mat,1))' * ones(1,size(pixel1_mat,2));
         
-        weight_1 = (1./distancia_1).^1;
+        weight_1 = (1./distancia_1).^4;
         weight_2 = flipud(weight_1);
         sum_weight = weight_1 + weight_2;
         weight_normalized_1 = weight_1./sum_weight;
@@ -120,7 +120,7 @@ function [im_final,im_siguiente] = stitch(im1,im2,mov,sentido,sizeX)
 
         % Update of output_image, with the new overlap zone
         overlap_image = uint8(255*(pixel1_mat.* weight_normalized_1_3D + pixel2_mat.* weight_normalized_2_3D));
-        im_fin(movY+1:movY+size(overlap_image,1),:,:) = overlap_image;
+%         im_fin(movY+1:movY+size(overlap_image,1),:,:) = overlap_image;
         
         im_final = im_fin;        
     end
